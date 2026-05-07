@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import About from "@/app/components/sections/About";
 import { getSiteImages } from "@/app/lib/site-images";
+import { OG_IMAGE } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
   title: "About",
@@ -13,7 +14,9 @@ export const metadata: Metadata = {
       "Vision, Mission, Values — a private infrastructure firm for Japan's defence and security ecosystem.",
     url: "/about",
     type: "website",
+    images: [OG_IMAGE],
   },
+  twitter: { images: [OG_IMAGE.url] },
 };
 
 export default async function AboutPage() {

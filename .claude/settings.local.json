@@ -6,7 +6,10 @@
       "Bash(xargs -0 sed -i 's/Defense/Defence/g; s/DEFENSE/DEFENCE/g; s/defense/defence/g')",
       "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\\(Resolve-Path 'public/BLUE VECTOR logo_word.png'\\)\\); $bmp = New-Object System.Drawing.Bitmap $img; $w = $bmp.Width; $h = $bmp.Height; $minX=$w; $minY=$h; $maxX=0; $maxY=0; for \\($y=0; $y -lt $h; $y+=2\\) { for \\($x=0; $x -lt $w; $x+=2\\) { if \\($bmp.GetPixel\\($x,$y\\).A -gt 10\\) { if \\($x -lt $minX\\){$minX=$x}; if \\($x -gt $maxX\\){$maxX=$x}; if \\($y -lt $minY\\){$minY=$y}; if \\($y -gt $maxY\\){$maxY=$y} } } }; \"size: $w x $h\"; \"bbox: L=$minX T=$minY R=$maxX B=$maxY\"; \"content: w=$\\($maxX-$minX\\) h=$\\($maxY-$minY\\)\"; \"left-pad-frac: $\\([math]::Round\\($minX/$w,3\\)\\) right-pad-frac: $\\([math]::Round\\(\\($w-$maxX\\)/$w,3\\)\\)\"; \"top-pad-frac: $\\([math]::Round\\($minY/$h,3\\)\\) bottom-pad-frac: $\\([math]::Round\\(\\($h-$maxY\\)/$h,3\\)\\)\"; $img.Dispose\\(\\); $bmp.Dispose\\(\\))",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\ankit\\\\Pictures\\\\blue-vector\" -Force | Select-Object Name, @{N=\"Type\"; E={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} | Sort-Object Name)",
-      "Bash(grep -E \"\\\\.ts$\")"
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ankit\\\\Pictures\\\\blue-vector\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(node -e \"const fs=require\\('fs'\\),b=fs.readFileSync\\('public/link-image.png'\\);console.log\\('width:',b.readUInt32BE\\(16\\),'height:',b.readUInt32BE\\(20\\)\\)\")"
     ]
   }
 }

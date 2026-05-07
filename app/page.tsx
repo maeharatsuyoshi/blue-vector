@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Hero from "@/app/components/sections/Hero";
 import { getSiteImages } from "@/app/lib/site-images";
+import { OG_IMAGE } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
   title: "Defence & Security Consulting",
@@ -13,7 +14,9 @@ export const metadata: Metadata = {
       "Vectoring the future of defence — strategic advisory, technology incubation, and investment support.",
     url: "/",
     type: "website",
+    images: [OG_IMAGE],
   },
+  twitter: { images: [OG_IMAGE.url] },
 };
 
 export const revalidate = 3600;

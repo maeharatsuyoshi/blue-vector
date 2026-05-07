@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Contact from "@/app/components/sections/Contact";
 import { getSiteImages } from "@/app/lib/site-images";
 import { getPrivacyContent } from "@/app/lib/privacy-content";
+import { OG_IMAGE } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
       "Advisory engagements, briefings, and qualified inquiries.",
     url: "/contact",
     type: "website",
+    images: [OG_IMAGE],
   },
+  twitter: { images: [OG_IMAGE.url] },
 };
 
 export default async function ContactPage() {

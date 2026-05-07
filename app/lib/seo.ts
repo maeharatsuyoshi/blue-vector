@@ -5,6 +5,13 @@ export const SITE_DESCRIPTION =
   "BLUE VECTOR is a private infrastructure firm providing defence and security consulting, strategic advisory, community initiatives, technology incubation, and investment support.";
 export const SITE_TAGLINE = "Vectoring the Future of Defense";
 
+export const OG_IMAGE = {
+  url: "/link-image.png",
+  width: 1897,
+  height: 1077,
+  alt: "BLUE VECTOR — Defence & Security Consulting",
+} as const;
+
 export const ORG_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Organization",

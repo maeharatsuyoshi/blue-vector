@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import News, { type NewsItemView } from "@/app/components/sections/News";
 import { listNews } from "@/app/lib/news-queries";
 import { getSiteImages } from "@/app/lib/site-images";
+import { OG_IMAGE } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
   title: "News",
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
       "Firm updates, research perspectives, and commentary on the defence landscape.",
     url: "/news",
     type: "website",
+    images: [OG_IMAGE],
   },
+  twitter: { images: [OG_IMAGE.url] },
 };
 
 export const revalidate = 600;

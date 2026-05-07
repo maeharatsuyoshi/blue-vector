@@ -8,6 +8,7 @@ import {
   SITE_NAME,
   SITE_LEGAL_NAME,
   SITE_DESCRIPTION,
+  OG_IMAGE,
   ORG_JSON_LD,
   WEBSITE_JSON_LD,
 } from "@/app/lib/seo";
@@ -82,12 +83,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     alternateLocale: ["ja_JP"],
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} | Defence & Security Consulting`,
     description:
       "Defence and security consulting and strategic advisory. Supporting defence innovation, policy strategy, and ecosystem development.",
+    images: [OG_IMAGE.url],
   },
   robots: {
     index: true,

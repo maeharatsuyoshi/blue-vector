@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Team, { type TeamMemberView } from "@/app/components/sections/Team";
 import { listTeam } from "@/app/lib/team-queries";
 import { getSiteImages } from "@/app/lib/site-images";
+import { OG_IMAGE } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
   title: "Team",
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
       "Founding members — operators from the Ministry of Defence, the Self-Defence Forces, and the defence investment sector.",
     url: "/team",
     type: "profile",
+    images: [OG_IMAGE],
   },
+  twitter: { images: [OG_IMAGE.url] },
 };
 
 export const revalidate = 3600;
