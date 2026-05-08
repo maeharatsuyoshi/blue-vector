@@ -53,15 +53,16 @@ export default async function TeamAdminPage() {
                     <span className="font-display text-sm font-bold truncate">
                       {m.name_en}
                     </span>
-                    <span
-                      className={
-                        m.category === "founder"
-                          ? "text-[8px] tracking-[0.2em] uppercase font-bold text-[var(--surface)] bg-[var(--ink)] px-1.5 py-0.5"
-                          : "text-[8px] tracking-[0.2em] uppercase font-bold text-[var(--ink)] border border-[var(--rule-strong)] px-1.5 py-0.5"
-                      }
-                    >
-                      {m.category === "founder" ? "Founder" : "Expert"}
-                    </span>
+                    {m.category === "founder" && (
+                      <span className="text-[8px] tracking-[0.2em] uppercase font-bold text-[var(--surface)] bg-[var(--ink)] px-1.5 py-0.5">
+                        Founder
+                      </span>
+                    )}
+                    {m.category === "expert" && (
+                      <span className="text-[8px] tracking-[0.2em] uppercase font-bold text-[var(--ink)] border border-[var(--rule-strong)] px-1.5 py-0.5">
+                        Expert
+                      </span>
+                    )}
                   </div>
                   <div className="text-[11px] text-[var(--ink-soft)] truncate">
                     {m.role_en}

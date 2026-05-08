@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "./db";
 
-export const TEAM_CATEGORIES = ["founder", "expert"] as const;
+export const TEAM_CATEGORIES = ["founder", "expert", "none"] as const;
 export type TeamCategory = (typeof TEAM_CATEGORIES)[number];
 
 export type TeamRow = {
@@ -24,11 +24,11 @@ function normalize(rows: Record<string, unknown>[]): TeamRow[] {
   return rows.map((r) => {
     const rawCategory = r.category as string | null | undefined;
     const category: TeamCategory =
-      rawCategory === "founder" || rawCategory === "expert"
+      rawCategory === "founder" || rawCategory === "expert" || rawCategory === "none"
         ? rawCategory
         : Boolean(r.is_founder)
           ? "founder"
-          : "expert";
+          : "none";
     return {
       id: r.id as number,
       slug: r.slug as string,
@@ -53,7 +53,7 @@ export async function listTeam(): Promise<TeamRow[]> {
            bio_en, bio_jp, initials, photo
     FROM team_members
     ORDER BY
-      CASE category WHEN 'founder' THEN 0 WHEN 'expert' THEN 1 ELSE 2 END ASC,
+      CASE category WHEN 'founder' THEN 0 WHEN 'expert' THEN 1 WHEN 'none' THEN 2 ELSE 3 END ASC,
       sort_order ASC,
       id ASC
   `;

@@ -14,7 +14,7 @@ const TEAM_ROTATION_MS = 6000;
 
 export type TeamMemberView = {
   id: number;
-  category: "founder" | "expert";
+  category: "founder" | "expert" | "none";
   name_en: string;
   name_jp: string;
   role_en: string;
@@ -24,9 +24,10 @@ export type TeamMemberView = {
   photo: string | null;
 };
 
-const GROUP_LABELS: Record<"founder" | "expert", { en: string; jp: string }> = {
+const GROUP_LABELS: Record<"founder" | "expert" | "none", { en: string; jp: string } | null> = {
   founder: { en: "Founding Members", jp: "創業メンバー" },
   expert: { en: "Defense Experts", jp: "防衛エキスパート" },
+  none: null,
 };
 
 function pick(m: TeamMemberView, field: "name" | "role" | "bio", lang: Lang) {
@@ -176,15 +177,22 @@ export default function Team({
                 </div>
               ) : (
                 <div className="mt-12 md:mt-14 border-t border-[var(--rule)] pt-8 md:pt-10 space-y-14 md:space-y-16">
-                  {(["founder", "expert"] as const).map((cat) => {
+                  {(["founder", "expert", "none"] as const).map((cat) => {
                     const group = members.filter((m) => m.category === cat);
                     if (group.length === 0) return null;
-                    const heading = lang === "jp" ? GROUP_LABELS[cat].jp : GROUP_LABELS[cat].en;
+                    const label = GROUP_LABELS[cat];
+                    const heading = label
+                      ? lang === "jp"
+                        ? label.jp
+                        : label.en
+                      : null;
                     return (
                       <div key={cat}>
-                        <h3 className="font-display text-[18px] md:text-[20px] font-bold text-[var(--ink)] tracking-tight mb-6 md:mb-8">
-                          {heading}
-                        </h3>
+                        {heading && (
+                          <h3 className="font-display text-[18px] md:text-[20px] font-bold text-[var(--ink)] tracking-tight mb-6 md:mb-8">
+                            {heading}
+                          </h3>
+                        )}
                         <div className="grid md:grid-cols-2 gap-8 md:gap-10">
                           {group.map((m) => {
                             const name = pick(m, "name", lang);

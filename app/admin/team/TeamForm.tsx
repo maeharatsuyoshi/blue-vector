@@ -30,10 +30,11 @@ export default function TeamForm({
       <SelectField
         label="Category"
         name="category"
-        defaultValue={initial?.category ?? "expert"}
+        defaultValue={initial?.category ?? "none"}
         options={[
           { value: "founder", label: "Founding member" },
           { value: "expert", label: "Defense expert" },
+          { value: "none", label: "None" },
         ]}
         errors={state?.fieldErrors?.category}
       />
