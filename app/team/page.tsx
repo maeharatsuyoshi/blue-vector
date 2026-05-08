@@ -26,6 +26,7 @@ export default async function TeamPage() {
   const [rows, images] = await Promise.all([listTeam(), getSiteImages()]);
   const members: TeamMemberView[] = rows.map((r) => ({
     id: r.id,
+    category: r.category,
     name_en: r.name_en,
     name_jp: r.name_jp,
     role_en: r.role_en,

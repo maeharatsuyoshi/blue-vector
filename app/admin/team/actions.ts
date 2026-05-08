@@ -14,6 +14,7 @@ import { slugify, uniqueSlug } from "@/app/lib/slug";
 
 const TeamSchema = z.object({
   sort_order: z.coerce.number().int().default(0),
+  category: z.enum(["founder", "expert"]).default("expert"),
   name_en: z.string().trim().min(1),
   name_jp: z.string().trim().min(1),
   role_en: z.string().trim().min(1),
@@ -62,7 +63,12 @@ export async function createTeamAction(
     slugify(parsed.name_en),
     `member-${Date.now()}`
   );
-  await createTeamMember({ ...parsed, slug, initials: "", is_founder: false });
+  await createTeamMember({
+    ...parsed,
+    slug,
+    initials: "",
+    is_founder: parsed.category === "founder",
+  });
   revalidatePath("/team");
   revalidatePath("/admin/team");
   redirect("/admin/team");
@@ -85,7 +91,7 @@ export async function updateTeamAction(
     ...parsed,
     slug: existing.slug,
     initials: existing.initials,
-    is_founder: existing.is_founder,
+    is_founder: parsed.category === "founder",
   });
   revalidatePath("/team");
   revalidatePath("/admin/team");

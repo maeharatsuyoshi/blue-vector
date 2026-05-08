@@ -27,6 +27,17 @@ export default function TeamForm({
 
   return (
     <form action={formAction} className="space-y-6">
+      <SelectField
+        label="Category"
+        name="category"
+        defaultValue={initial?.category ?? "expert"}
+        options={[
+          { value: "founder", label: "Founding member" },
+          { value: "expert", label: "Defense expert" },
+        ]}
+        errors={state?.fieldErrors?.category}
+      />
+
       <Field
         label="Sort order"
         name="sort_order"
@@ -184,6 +195,48 @@ function Field({
           className={inputCls}
         />
       )}
+      {errors && errors.length > 0 && (
+        <p className="mt-1.5 text-[11px] text-red-400">{errors[0]}</p>
+      )}
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  name,
+  defaultValue,
+  options,
+  errors,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  options: { value: string; label: string }[];
+  errors?: string[];
+}) {
+  const inputCls =
+    "w-full bg-transparent border border-[var(--rule-strong)] px-3 py-2.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--ink)]";
+  return (
+    <div>
+      <label
+        htmlFor={name}
+        className="block text-[10px] tracking-[0.22em] uppercase font-semibold text-[var(--ink-soft)] mb-2"
+      >
+        {label}
+      </label>
+      <select
+        id={name}
+        name={name}
+        defaultValue={defaultValue}
+        className={inputCls}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value} className="bg-[var(--surface)] text-[var(--ink)]">
+            {o.label}
+          </option>
+        ))}
+      </select>
       {errors && errors.length > 0 && (
         <p className="mt-1.5 text-[11px] text-red-400">{errors[0]}</p>
       )}

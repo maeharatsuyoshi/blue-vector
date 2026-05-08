@@ -14,6 +14,7 @@ const TEAM_ROTATION_MS = 6000;
 
 export type TeamMemberView = {
   id: number;
+  category: "founder" | "expert";
   name_en: string;
   name_jp: string;
   role_en: string;
@@ -21,6 +22,11 @@ export type TeamMemberView = {
   bio_en: string;
   bio_jp: string;
   photo: string | null;
+};
+
+const GROUP_LABELS: Record<"founder" | "expert", { en: string; jp: string }> = {
+  founder: { en: "Founding Members", jp: "創業メンバー" },
+  expert: { en: "Defense Experts", jp: "防衛エキスパート" },
 };
 
 function pick(m: TeamMemberView, field: "name" | "role" | "bio", lang: Lang) {
@@ -169,31 +175,45 @@ export default function Team({
                   No team members yet.
                 </div>
               ) : (
-                <div className="mt-12 md:mt-14 grid md:grid-cols-2 gap-8 md:gap-10 border-t border-[var(--rule)] pt-8 md:pt-10">
-                  {members.map((m) => {
-                    const name = pick(m, "name", lang);
+                <div className="mt-12 md:mt-14 border-t border-[var(--rule)] pt-8 md:pt-10 space-y-14 md:space-y-16">
+                  {(["founder", "expert"] as const).map((cat) => {
+                    const group = members.filter((m) => m.category === cat);
+                    if (group.length === 0) return null;
+                    const heading = lang === "jp" ? GROUP_LABELS[cat].jp : GROUP_LABELS[cat].en;
                     return (
-                      <article
-                        key={m.id}
-                        className="flex flex-col sm:flex-row gap-5 sm:gap-7"
-                      >
-                        <div className="w-32 sm:w-36 lg:w-40 shrink-0">
-                          <Avatar name={name} photo={m.photo} />
+                      <div key={cat}>
+                        <h3 className="font-display text-[18px] md:text-[20px] font-bold text-[var(--ink)] tracking-tight mb-6 md:mb-8">
+                          {heading}
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                          {group.map((m) => {
+                            const name = pick(m, "name", lang);
+                            return (
+                              <article
+                                key={m.id}
+                                className="flex flex-col sm:flex-row gap-5 sm:gap-7"
+                              >
+                                <div className="w-32 sm:w-36 lg:w-40 shrink-0">
+                                  <Avatar name={name} photo={m.photo} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
+                                    {name}
+                                  </h4>
+                                  <div className="mt-1.5 text-[9px] tracking-[0.22em] uppercase text-[var(--ink-soft)] font-semibold">
+                                    {pick(m, "role", lang)}
+                                  </div>
+                                  <div className="mt-3 pt-3 border-t border-[var(--rule)]">
+                                    <p className="text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line">
+                                      {pick(m, "bio", lang)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
-                            {name}
-                          </h3>
-                          <div className="mt-1.5 text-[9px] tracking-[0.22em] uppercase text-[var(--ink-soft)] font-semibold">
-                            {pick(m, "role", lang)}
-                          </div>
-                          <div className="mt-3 pt-3 border-t border-[var(--rule)]">
-                            <p className="text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line">
-                              {pick(m, "bio", lang)}
-                            </p>
-                          </div>
-                        </div>
-                      </article>
+                      </div>
                     );
                   })}
                 </div>

@@ -62,6 +62,8 @@ async function main() {
   await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS image TEXT`;
   await sql`ALTER TABLE team_members ADD COLUMN IF NOT EXISTS is_founder BOOLEAN NOT NULL DEFAULT false`;
   await sql`UPDATE team_members SET is_founder = true WHERE slug IN ('uemura', 'maehara') AND is_founder = false`;
+  await sql`ALTER TABLE team_members ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'expert'`;
+  await sql`UPDATE team_members SET category = 'founder' WHERE is_founder = true AND category = 'expert'`;
 
   await sql`CREATE INDEX IF NOT EXISTS news_date_idx ON news (date_published DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS team_sort_idx ON team_members (sort_order ASC)`;

@@ -1,11 +1,15 @@
 import "server-only";
 import { sql } from "./db";
 
+export const TEAM_CATEGORIES = ["founder", "expert"] as const;
+export type TeamCategory = (typeof TEAM_CATEGORIES)[number];
+
 export type TeamRow = {
   id: number;
   slug: string;
   sort_order: number;
   is_founder: boolean;
+  category: TeamCategory;
   name_en: string;
   name_jp: string;
   role_en: string;
@@ -17,35 +21,48 @@ export type TeamRow = {
 };
 
 function normalize(rows: Record<string, unknown>[]): TeamRow[] {
-  return rows.map((r) => ({
-    id: r.id as number,
-    slug: r.slug as string,
-    sort_order: r.sort_order as number,
-    is_founder: Boolean(r.is_founder),
-    name_en: r.name_en as string,
-    name_jp: r.name_jp as string,
-    role_en: r.role_en as string,
-    role_jp: r.role_jp as string,
-    bio_en: r.bio_en as string,
-    bio_jp: r.bio_jp as string,
-    initials: r.initials as string,
-    photo: (r.photo as string | null) ?? null,
-  }));
+  return rows.map((r) => {
+    const rawCategory = r.category as string | null | undefined;
+    const category: TeamCategory =
+      rawCategory === "founder" || rawCategory === "expert"
+        ? rawCategory
+        : Boolean(r.is_founder)
+          ? "founder"
+          : "expert";
+    return {
+      id: r.id as number,
+      slug: r.slug as string,
+      sort_order: r.sort_order as number,
+      is_founder: Boolean(r.is_founder),
+      category,
+      name_en: r.name_en as string,
+      name_jp: r.name_jp as string,
+      role_en: r.role_en as string,
+      role_jp: r.role_jp as string,
+      bio_en: r.bio_en as string,
+      bio_jp: r.bio_jp as string,
+      initials: r.initials as string,
+      photo: (r.photo as string | null) ?? null,
+    };
+  });
 }
 
 export async function listTeam(): Promise<TeamRow[]> {
   const rows = await sql`
-    SELECT id, slug, sort_order, is_founder, name_en, name_jp, role_en, role_jp,
+    SELECT id, slug, sort_order, is_founder, category, name_en, name_jp, role_en, role_jp,
            bio_en, bio_jp, initials, photo
     FROM team_members
-    ORDER BY is_founder DESC, sort_order ASC, id ASC
+    ORDER BY
+      CASE category WHEN 'founder' THEN 0 WHEN 'expert' THEN 1 ELSE 2 END ASC,
+      sort_order ASC,
+      id ASC
   `;
   return normalize(rows as Record<string, unknown>[]);
 }
 
 export async function getTeamMember(id: number): Promise<TeamRow | null> {
   const rows = await sql`
-    SELECT id, slug, sort_order, is_founder, name_en, name_jp, role_en, role_jp,
+    SELECT id, slug, sort_order, is_founder, category, name_en, name_jp, role_en, role_jp,
            bio_en, bio_jp, initials, photo
     FROM team_members WHERE id = ${id}
   `;
@@ -58,13 +75,13 @@ export type TeamInput = Omit<TeamRow, "id">;
 export async function createTeamMember(input: TeamInput): Promise<number> {
   const rows = await sql`
     INSERT INTO team_members (
-      slug, sort_order, is_founder,
+      slug, sort_order, is_founder, category,
       name_en, name_jp,
       role_en, role_jp,
       bio_en, bio_jp,
       initials, photo
     ) VALUES (
-      ${input.slug}, ${input.sort_order}, ${input.is_founder},
+      ${input.slug}, ${input.sort_order}, ${input.is_founder}, ${input.category},
       ${input.name_en}, ${input.name_jp},
       ${input.role_en}, ${input.role_jp},
       ${input.bio_en}, ${input.bio_jp},
@@ -84,6 +101,7 @@ export async function updateTeamMember(
       slug = ${input.slug},
       sort_order = ${input.sort_order},
       is_founder = ${input.is_founder},
+      category = ${input.category},
       name_en = ${input.name_en},
       name_jp = ${input.name_jp},
       role_en = ${input.role_en},
