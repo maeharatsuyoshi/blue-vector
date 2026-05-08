@@ -216,9 +216,11 @@ export default function Team({
                                 key={m.id}
                                 className="flex flex-col sm:flex-row gap-5 sm:gap-7"
                               >
-                                <div className="w-32 sm:w-36 lg:w-40 shrink-0">
-                                  <Avatar name={name} photo={m.photo} />
-                                </div>
+                                {m.photo && (
+                                  <div className="w-32 sm:w-36 lg:w-40 shrink-0">
+                                    <Avatar name={name} photo={m.photo} />
+                                  </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
                                     {name}
@@ -255,9 +257,11 @@ export default function Team({
                                 key={m.id}
                                 className="flex flex-col sm:flex-row gap-5 sm:gap-7"
                               >
-                                <div className="w-32 sm:w-36 lg:w-40 shrink-0">
-                                  <Avatar name={name} photo={m.photo} />
-                                </div>
+                                {m.photo && (
+                                  <div className="w-32 sm:w-36 lg:w-40 shrink-0">
+                                    <Avatar name={name} photo={m.photo} />
+                                  </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
                                     {name}
