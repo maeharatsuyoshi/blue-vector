@@ -2,11 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { findUserByEmail, verifyPassword } from "./users";
-import { createSessionCookie, clearSessionCookie } from "./session";
+import { getSupabaseServer } from "./supabase-server";
 
 const LoginSchema = z.object({
-  email: z.string().email().trim().toLowerCase(),
+  email: z.email().trim().toLowerCase(),
   password: z.string().min(1),
 });
 
@@ -32,26 +31,18 @@ export async function loginAction(
   }
 
   const { email, password } = parsed.data;
-  const user = await findUserByEmail(email);
-  if (!user) {
+  const supabase = await getSupabaseServer();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
     return { error: "Invalid email or password.", email };
   }
-
-  const ok = await verifyPassword(password, user.password_hash);
-  if (!ok) {
-    return { error: "Invalid email or password.", email };
-  }
-
-  await createSessionCookie({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  });
 
   redirect("/admin");
 }
 
 export async function logoutAction() {
-  await clearSessionCookie();
+  const supabase = await getSupabaseServer();
+  await supabase.auth.signOut();
   redirect("/login");
 }
