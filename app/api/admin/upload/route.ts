@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { put } from "@vercel/blob";
 import { verifySession } from "@/app/lib/dal";
+import { supabaseAdmin } from "@/app/lib/supabase-server";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = new Set([
@@ -20,15 +20,10 @@ const EXT: Record<string, string> = {
   "image/avif": "avif",
 };
 
+const BUCKET = "uploads";
+
 export async function POST(request: Request) {
   await verifySession();
-
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json(
-      { error: "Blob storage not configured (BLOB_READ_WRITE_TOKEN missing)" },
-      { status: 500 }
-    );
-  }
 
   const form = await request.formData();
   const file = form.get("file");
@@ -50,12 +45,23 @@ export async function POST(request: Request) {
   }
 
   const ext = EXT[file.type] ?? "bin";
-  const filename = `uploads/${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
+  const objectPath = `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
 
-  const blob = await put(filename, file, {
-    access: "public",
-    contentType: file.type,
-  });
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(objectPath, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
-  return NextResponse.json({ url: blob.url });
+  if (uploadError) {
+    return NextResponse.json(
+      { error: `Upload failed: ${uploadError.message}` },
+      { status: 500 }
+    );
+  }
+
+  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(objectPath);
+  return NextResponse.json({ url: data.publicUrl });
 }
