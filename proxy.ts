@@ -23,8 +23,13 @@ export async function proxy(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (req.nextUrl.pathname.startsWith("/admin") && !user) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+  if (req.nextUrl.pathname.startsWith("/admin")) {
+    const role =
+      (user?.app_metadata as Record<string, unknown> | undefined)?.role ??
+      (user?.user_metadata as Record<string, unknown> | undefined)?.role;
+    if (!user || role !== "admin") {
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
+    }
   }
 
   return res;
@@ -32,6 +37,6 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif)$).*)",
   ],
 };
