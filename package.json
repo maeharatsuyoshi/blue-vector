@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:check": "tsx scripts/check.ts",
+    "db:migrate-blobs": "tsx scripts/migrate-blobs.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

@@ -1,19 +1,27 @@
-import { sql } from "./db";
+import { supabase } from "./db";
 
 async function main() {
-  const team = await sql`
-    SELECT id, name_en, photo FROM team_members
-    WHERE photo LIKE '/uploads/%'
-  `;
-  const news = await sql`
-    SELECT id, title_en, image FROM news
-    WHERE image LIKE '/uploads/%'
-  `;
-  console.log(`Team members still referencing /uploads/: ${team.length}`);
-  if (team.length) console.table(team);
-  console.log(`News posts still referencing /uploads/: ${news.length}`);
-  if (news.length) console.table(news);
-  if (team.length === 0 && news.length === 0) {
+  const { data: team, error: teamErr } = await supabase
+    .from("team_members")
+    .select("id, name_en, photo")
+    .like("photo", "/uploads/%");
+  if (teamErr) throw teamErr;
+
+  const { data: news, error: newsErr } = await supabase
+    .from("news")
+    .select("id, title_en, image")
+    .like("image", "/uploads/%");
+  if (newsErr) throw newsErr;
+
+  const teamRows = team ?? [];
+  const newsRows = news ?? [];
+
+  console.log(`Team members still referencing /uploads/: ${teamRows.length}`);
+  if (teamRows.length) console.table(teamRows);
+  console.log(`News posts still referencing /uploads/: ${newsRows.length}`);
+  if (newsRows.length) console.table(newsRows);
+
+  if (teamRows.length === 0 && newsRows.length === 0) {
     console.log("✓ Safe to delete public/uploads/");
   }
 }

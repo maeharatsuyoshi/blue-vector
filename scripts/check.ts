@@ -1,22 +1,17 @@
-import { sql } from "./db";
+import { supabase } from "./db";
+
+const TABLES = ["news", "team_members", "site_images", "privacy_policy"] as const;
 
 async function main() {
-  const rows = await sql`
-    SELECT table_schema, table_name
-    FROM information_schema.tables
-    WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
-    ORDER BY table_schema, table_name
-  `;
-  console.log("Tables in DB:");
-  console.table(rows);
-
-  const counts = await sql`
-    SELECT
-      (SELECT COUNT(*)::int FROM news) AS news,
-      (SELECT COUNT(*)::int FROM team_members) AS team,
-      (SELECT COUNT(*)::int FROM users) AS users
-  `;
-  console.log("Row counts:", counts[0]);
+  console.log("Row counts (Supabase public schema):");
+  const counts: Record<string, number | string> = {};
+  for (const table of TABLES) {
+    const { count, error } = await supabase
+      .from(table)
+      .select("*", { count: "exact", head: true });
+    counts[table] = error ? `error: ${error.message}` : (count ?? 0);
+  }
+  console.table(counts);
 }
 
 main().catch((err) => {
