@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "./db";
+import { supabaseAdmin } from "./supabase-server";
 
 export type NewsRow = {
   id: number;
@@ -16,6 +16,9 @@ export type NewsRow = {
   sort_order: number;
   image: string | null;
 };
+
+const COLUMNS =
+  "id, slug, date_published, category_en, category_jp, title_en, title_jp, excerpt_en, excerpt_jp, body_en, body_jp, sort_order, image";
 
 function normalize(rows: Record<string, unknown>[]): NewsRow[] {
   return rows.map((r) => ({
@@ -39,69 +42,47 @@ function normalize(rows: Record<string, unknown>[]): NewsRow[] {
 }
 
 export async function listNews(): Promise<NewsRow[]> {
-  const rows = await sql`
-    SELECT id, slug, date_published, category_en, category_jp,
-           title_en, title_jp, excerpt_en, excerpt_jp,
-           body_en, body_jp, sort_order, image
-    FROM news
-    ORDER BY date_published DESC, id DESC
-  `;
-  return normalize(rows as Record<string, unknown>[]);
+  const { data, error } = await supabaseAdmin
+    .from("news")
+    .select(COLUMNS)
+    .order("date_published", { ascending: false })
+    .order("id", { ascending: false });
+  if (error) throw error;
+  return normalize((data ?? []) as Record<string, unknown>[]);
 }
 
 export async function getNews(id: number): Promise<NewsRow | null> {
-  const rows = await sql`
-    SELECT id, slug, date_published, category_en, category_jp,
-           title_en, title_jp, excerpt_en, excerpt_jp,
-           body_en, body_jp, sort_order, image
-    FROM news WHERE id = ${id}
-  `;
-  const list = normalize(rows as Record<string, unknown>[]);
-  return list[0] ?? null;
+  const { data, error } = await supabaseAdmin
+    .from("news")
+    .select(COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return normalize([data as Record<string, unknown>])[0] ?? null;
 }
 
 export type NewsInput = Omit<NewsRow, "id">;
 
 export async function createNews(input: NewsInput): Promise<number> {
-  const rows = await sql`
-    INSERT INTO news (
-      slug, date_published, sort_order, image,
-      category_en, category_jp,
-      title_en, title_jp,
-      excerpt_en, excerpt_jp,
-      body_en, body_jp
-    ) VALUES (
-      ${input.slug}, ${input.date_published}, ${input.sort_order}, ${input.image},
-      ${input.category_en}, ${input.category_jp},
-      ${input.title_en}, ${input.title_jp},
-      ${input.excerpt_en}, ${input.excerpt_jp},
-      ${input.body_en}, ${input.body_jp}
-    )
-    RETURNING id
-  `;
-  return (rows[0] as { id: number }).id;
+  const { data, error } = await supabaseAdmin
+    .from("news")
+    .insert(input)
+    .select("id")
+    .single();
+  if (error) throw error;
+  return (data as { id: number }).id;
 }
 
 export async function updateNews(id: number, input: NewsInput): Promise<void> {
-  await sql`
-    UPDATE news SET
-      slug = ${input.slug},
-      date_published = ${input.date_published},
-      sort_order = ${input.sort_order},
-      image = ${input.image},
-      category_en = ${input.category_en},
-      category_jp = ${input.category_jp},
-      title_en = ${input.title_en},
-      title_jp = ${input.title_jp},
-      excerpt_en = ${input.excerpt_en},
-      excerpt_jp = ${input.excerpt_jp},
-      body_en = ${input.body_en},
-      body_jp = ${input.body_jp},
-      updated_at = now()
-    WHERE id = ${id}
-  `;
+  const { error } = await supabaseAdmin
+    .from("news")
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function deleteNews(id: number): Promise<void> {
-  await sql`DELETE FROM news WHERE id = ${id}`;
+  const { error } = await supabaseAdmin.from("news").delete().eq("id", id);
+  if (error) throw error;
 }

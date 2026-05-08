@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "./db";
+import { supabaseAdmin } from "./supabase-server";
 
 export function slugify(input: string): string {
   return input
@@ -22,12 +22,17 @@ export function slugifyWords(input: string, maxWords: number): string {
   return words.join("");
 }
 
-async function slugExists(table: "news" | "team_members", slug: string): Promise<boolean> {
-  const rows =
-    table === "news"
-      ? await sql`SELECT 1 FROM news WHERE slug = ${slug} LIMIT 1`
-      : await sql`SELECT 1 FROM team_members WHERE slug = ${slug} LIMIT 1`;
-  return rows.length > 0;
+async function slugExists(
+  table: "news" | "team_members",
+  slug: string
+): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from(table)
+    .select("slug")
+    .eq("slug", slug)
+    .limit(1);
+  if (error) throw error;
+  return (data?.length ?? 0) > 0;
 }
 
 export async function uniqueSlug(
