@@ -2,62 +2,30 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import type { TeamRow } from "@/app/lib/team-queries";
-import type { TeamFormState } from "./actions";
-import ImageUpload from "../ImageUpload";
+import type { TeamCategoryRow } from "@/app/lib/team-categories-queries";
+import type { CategoryFormState } from "./actions";
 
 type Action = (
-  state: TeamFormState | undefined,
+  state: CategoryFormState | undefined,
   formData: FormData
-) => Promise<TeamFormState>;
+) => Promise<CategoryFormState>;
 
-export type CategoryOption = { slug: string; name: string };
-
-export default function TeamForm({
+export default function CategoryForm({
   initial,
   action,
   submitLabel,
-  categories,
 }: {
-  initial?: TeamRow;
+  initial?: TeamCategoryRow;
   action: Action;
   submitLabel: string;
-  categories: CategoryOption[];
 }) {
-  const [state, formAction, pending] = useActionState<TeamFormState | undefined, FormData>(
-    action,
-    undefined
-  );
-
-  const options = [
-    ...categories.map((c) => ({ value: c.slug, label: `${c.name} (${c.slug})` })),
-    { value: "none", label: "None" },
-  ];
+  const [state, formAction, pending] = useActionState<
+    CategoryFormState | undefined,
+    FormData
+  >(action, undefined);
 
   return (
     <form action={formAction} className="space-y-6">
-      <SelectField
-        label="Category"
-        name="category"
-        defaultValue={initial?.category ?? "none"}
-        options={options}
-        errors={state?.fieldErrors?.category}
-      />
-
-      <Field
-        label="Sort order"
-        name="sort_order"
-        type="number"
-        defaultValue={String(initial?.sort_order ?? 0)}
-        errors={state?.fieldErrors?.sort_order}
-      />
-
-      <ImageUpload
-        name="photo"
-        label="Photo — optional"
-        initialUrl={initial?.photo}
-      />
-
       <Section title="English">
         <Field
           label="Name"
@@ -67,20 +35,12 @@ export default function TeamForm({
           required
         />
         <Field
-          label="Role"
-          name="role_en"
-          defaultValue={initial?.role_en}
-          errors={state?.fieldErrors?.role_en}
-          required
-        />
-        <Field
-          label="Bio"
-          name="bio_en"
-          defaultValue={initial?.bio_en}
-          errors={state?.fieldErrors?.bio_en}
+          label="Description"
+          name="description_en"
+          defaultValue={initial?.description_en}
+          errors={state?.fieldErrors?.description_en}
           textarea
-          rows={6}
-          required
+          rows={4}
         />
       </Section>
 
@@ -93,20 +53,12 @@ export default function TeamForm({
           required
         />
         <Field
-          label="Role"
-          name="role_jp"
-          defaultValue={initial?.role_jp}
-          errors={state?.fieldErrors?.role_jp}
-          required
-        />
-        <Field
-          label="Bio"
-          name="bio_jp"
-          defaultValue={initial?.bio_jp}
-          errors={state?.fieldErrors?.bio_jp}
+          label="Description"
+          name="description_jp"
+          defaultValue={initial?.description_jp}
+          errors={state?.fieldErrors?.description_jp}
           textarea
-          rows={6}
-          required
+          rows={4}
         />
       </Section>
 
@@ -125,7 +77,7 @@ export default function TeamForm({
           {pending ? "Saving…" : submitLabel}
         </button>
         <Link
-          href="/admin/team"
+          href="/admin/team/categories"
           className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]"
         >
           Cancel
@@ -143,7 +95,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4 pt-4 border-t border-[var(--rule)]">
+    <div className="space-y-4 pt-4 border-t border-[var(--rule)] first:border-t-0 first:pt-0">
       <h2 className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[var(--ink-soft)]">
         {title}
       </h2>
@@ -156,7 +108,6 @@ function Field({
   label,
   name,
   defaultValue,
-  type = "text",
   textarea = false,
   rows = 3,
   required = false,
@@ -165,7 +116,6 @@ function Field({
   label: string;
   name: string;
   defaultValue?: string;
-  type?: string;
   textarea?: boolean;
   rows?: number;
   required?: boolean;
@@ -195,54 +145,12 @@ function Field({
         <input
           id={name}
           name={name}
-          type={type}
+          type="text"
           required={required}
           defaultValue={defaultValue}
           className={inputCls}
         />
       )}
-      {errors && errors.length > 0 && (
-        <p className="mt-1.5 text-[11px] text-red-400">{errors[0]}</p>
-      )}
-    </div>
-  );
-}
-
-function SelectField({
-  label,
-  name,
-  defaultValue,
-  options,
-  errors,
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-  options: { value: string; label: string }[];
-  errors?: string[];
-}) {
-  const inputCls =
-    "w-full bg-transparent border border-[var(--rule-strong)] px-3 py-2.5 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--ink)]";
-  return (
-    <div>
-      <label
-        htmlFor={name}
-        className="block text-[10px] tracking-[0.22em] uppercase font-semibold text-[var(--ink-soft)] mb-2"
-      >
-        {label}
-      </label>
-      <select
-        id={name}
-        name={name}
-        defaultValue={defaultValue}
-        className={inputCls}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-[var(--surface)] text-[var(--ink)]">
-            {o.label}
-          </option>
-        ))}
-      </select>
       {errors && errors.length > 0 && (
         <p className="mt-1.5 text-[11px] text-red-400">{errors[0]}</p>
       )}

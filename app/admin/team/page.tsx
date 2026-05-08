@@ -15,12 +15,20 @@ export default async function TeamAdminPage() {
             {team.length} {team.length === 1 ? "member" : "members"}
           </p>
         </div>
-        <Link
-          href="/admin/team/new"
-          className="bg-[var(--ink)] text-[var(--surface)] px-4 py-2.5 text-[11px] tracking-[0.22em] uppercase font-semibold cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          + New member
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/team/categories"
+            className="text-[11px] tracking-[0.22em] uppercase font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)] border border-[var(--rule-strong)] px-4 py-2.5 cursor-pointer transition-colors"
+          >
+            Manage categories
+          </Link>
+          <Link
+            href="/admin/team/new"
+            className="bg-[var(--ink)] text-[var(--surface)] px-4 py-2.5 text-[11px] tracking-[0.22em] uppercase font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            + New member
+          </Link>
+        </div>
       </div>
 
       <div className="border border-[var(--rule)]">
@@ -58,9 +66,9 @@ export default async function TeamAdminPage() {
                         Founder
                       </span>
                     )}
-                    {m.category === "expert" && (
+                    {m.category !== "founder" && m.category !== "none" && (
                       <span className="text-[8px] tracking-[0.2em] uppercase font-bold text-[var(--ink)] border border-[var(--rule-strong)] px-1.5 py-0.5">
-                        Expert
+                        {m.category}
                       </span>
                     )}
                   </div>

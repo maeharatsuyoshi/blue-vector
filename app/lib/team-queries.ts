@@ -1,15 +1,14 @@
 import "server-only";
 import { sql } from "./db";
 
-export const TEAM_CATEGORIES = ["founder", "expert", "none"] as const;
-export type TeamCategory = (typeof TEAM_CATEGORIES)[number];
+export const NO_CATEGORY = "none" as const;
 
 export type TeamRow = {
   id: number;
   slug: string;
   sort_order: number;
   is_founder: boolean;
-  category: TeamCategory;
+  category: string;
   name_en: string;
   name_jp: string;
   role_en: string;
@@ -22,13 +21,13 @@ export type TeamRow = {
 
 function normalize(rows: Record<string, unknown>[]): TeamRow[] {
   return rows.map((r) => {
-    const rawCategory = r.category as string | null | undefined;
-    const category: TeamCategory =
-      rawCategory === "founder" || rawCategory === "expert" || rawCategory === "none"
+    const rawCategory = (r.category as string | null | undefined) ?? "";
+    const category =
+      rawCategory.length > 0
         ? rawCategory
         : Boolean(r.is_founder)
           ? "founder"
-          : "none";
+          : NO_CATEGORY;
     return {
       id: r.id as number,
       slug: r.slug as string,
@@ -49,13 +48,16 @@ function normalize(rows: Record<string, unknown>[]): TeamRow[] {
 
 export async function listTeam(): Promise<TeamRow[]> {
   const rows = await sql`
-    SELECT id, slug, sort_order, is_founder, category, name_en, name_jp, role_en, role_jp,
-           bio_en, bio_jp, initials, photo
-    FROM team_members
+    SELECT m.id, m.slug, m.sort_order, m.is_founder, m.category,
+           m.name_en, m.name_jp, m.role_en, m.role_jp,
+           m.bio_en, m.bio_jp, m.initials, m.photo
+    FROM team_members m
+    LEFT JOIN team_categories c ON c.slug = m.category
     ORDER BY
-      CASE category WHEN 'founder' THEN 0 WHEN 'expert' THEN 1 WHEN 'none' THEN 2 ELSE 3 END ASC,
-      sort_order ASC,
-      id ASC
+      CASE m.category WHEN 'founder' THEN 0 WHEN 'expert' THEN 1 WHEN 'none' THEN 9999 ELSE 2 END ASC,
+      c.created_at ASC NULLS LAST,
+      m.sort_order ASC,
+      m.id ASC
   `;
   return normalize(rows as Record<string, unknown>[]);
 }

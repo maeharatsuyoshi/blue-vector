@@ -1,7 +1,9 @@
 import TeamForm from "../TeamForm";
 import { createTeamAction } from "../actions";
+import { listTeamCategories } from "@/app/lib/team-categories-queries";
 
-export default function NewTeamMemberPage() {
+export default async function NewTeamMemberPage() {
+  const categories = await listTeamCategories();
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
@@ -12,7 +14,11 @@ export default function NewTeamMemberPage() {
           Add a new founding or staff profile.
         </p>
       </div>
-      <TeamForm action={createTeamAction} submitLabel="Create" />
+      <TeamForm
+        action={createTeamAction}
+        submitLabel="Create"
+        categories={categories.map((c) => ({ slug: c.slug, name: c.name_en }))}
+      />
     </div>
   );
 }

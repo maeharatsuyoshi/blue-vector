@@ -14,7 +14,7 @@ const TEAM_ROTATION_MS = 6000;
 
 export type TeamMemberView = {
   id: number;
-  category: "founder" | "expert" | "none";
+  category: string;
   name_en: string;
   name_jp: string;
   role_en: string;
@@ -24,10 +24,12 @@ export type TeamMemberView = {
   photo: string | null;
 };
 
-const GROUP_LABELS: Record<"founder" | "expert" | "none", { en: string; jp: string } | null> = {
-  founder: { en: "Founding Members", jp: "創業メンバー" },
-  expert: { en: "Defense Experts", jp: "防衛エキスパート" },
-  none: null,
+export type TeamCategoryView = {
+  slug: string;
+  name_en: string;
+  name_jp: string;
+  description_en: string;
+  description_jp: string;
 };
 
 function pick(m: TeamMemberView, field: "name" | "role" | "bio", lang: Lang) {
@@ -69,9 +71,11 @@ export type HeroImage = { url: string; bottomFadeStyle: string; topFadeStyle: st
 
 export default function Team({
   members,
+  categories,
   heroImages,
 }: {
   members: TeamMemberView[];
+  categories: TeamCategoryView[];
   heroImages: HeroImage[];
 }) {
   const { t, lang } = useLanguage();
@@ -176,24 +180,35 @@ export default function Team({
                   No team members yet.
                 </div>
               ) : (
-                <div className="mt-12 md:mt-14 border-t border-[var(--rule)] pt-8 md:pt-10 space-y-14 md:space-y-16">
-                  {(["founder", "expert", "none"] as const).map((cat) => {
-                    const group = members.filter((m) => m.category === cat);
+                <div className="space-y-16 md:space-y-20">
+                  {categories.map((c) => {
+                    const group = members.filter((m) => m.category === c.slug);
                     if (group.length === 0) return null;
-                    const label = GROUP_LABELS[cat];
-                    const heading = label
-                      ? lang === "jp"
-                        ? label.jp
-                        : label.en
-                      : null;
+                    const isFounder = c.slug === "founder";
+                    const heading = lang === "jp" ? c.name_jp : c.name_en;
+                    const description =
+                      lang === "jp" ? c.description_jp : c.description_en;
                     return (
-                      <div key={cat}>
-                        {heading && (
-                          <h3 className="font-display text-[18px] md:text-[20px] font-bold text-[var(--ink)] tracking-tight mb-6 md:mb-8">
-                            {heading}
-                          </h3>
+                      <div key={c.slug}>
+                        {!isFounder && (
+                          <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 items-start mt-12 md:mt-14">
+                            <div className="lg:col-span-5">
+                              <h2 className="font-display text-[22px] md:text-[28px] lg:text-[32px] leading-[1.2] font-bold text-[var(--ink)] tracking-tight">
+                                {heading}
+                              </h2>
+                            </div>
+                            {description && (
+                              <div className="lg:col-span-7">
+                                <p className="text-[14px] md:text-[15px] leading-[1.8] text-[var(--ink-soft)] whitespace-pre-line">
+                                  {description}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         )}
-                        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                        <div
+                          className={`mt-12 md:mt-14 border-t border-[var(--rule)] pt-8 md:pt-10 grid md:grid-cols-2 gap-8 md:gap-10`}
+                        >
                           {group.map((m) => {
                             const name = pick(m, "name", lang);
                             return (
@@ -224,6 +239,45 @@ export default function Team({
                       </div>
                     );
                   })}
+                  {(() => {
+                    const knownSlugs = new Set(categories.map((c) => c.slug));
+                    const orphans = members.filter(
+                      (m) => !knownSlugs.has(m.category)
+                    );
+                    if (orphans.length === 0) return null;
+                    return (
+                      <div>
+                        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                          {orphans.map((m) => {
+                            const name = pick(m, "name", lang);
+                            return (
+                              <article
+                                key={m.id}
+                                className="flex flex-col sm:flex-row gap-5 sm:gap-7"
+                              >
+                                <div className="w-32 sm:w-36 lg:w-40 shrink-0">
+                                  <Avatar name={name} photo={m.photo} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
+                                    {name}
+                                  </h4>
+                                  <div className="mt-1.5 text-[9px] tracking-[0.22em] uppercase text-[var(--ink-soft)] font-semibold">
+                                    {pick(m, "role", lang)}
+                                  </div>
+                                  <div className="mt-3 pt-3 border-t border-[var(--rule)]">
+                                    <p className="text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line">
+                                      {pick(m, "bio", lang)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>

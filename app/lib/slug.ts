@@ -22,16 +22,20 @@ export function slugifyWords(input: string, maxWords: number): string {
   return words.join("");
 }
 
-async function slugExists(table: "news" | "team_members", slug: string): Promise<boolean> {
+type SlugTable = "news" | "team_members" | "team_categories";
+
+async function slugExists(table: SlugTable, slug: string): Promise<boolean> {
   const rows =
     table === "news"
       ? await sql`SELECT 1 FROM news WHERE slug = ${slug} LIMIT 1`
-      : await sql`SELECT 1 FROM team_members WHERE slug = ${slug} LIMIT 1`;
+      : table === "team_members"
+        ? await sql`SELECT 1 FROM team_members WHERE slug = ${slug} LIMIT 1`
+        : await sql`SELECT 1 FROM team_categories WHERE slug = ${slug} LIMIT 1`;
   return rows.length > 0;
 }
 
 export async function uniqueSlug(
-  table: "news" | "team_members",
+  table: SlugTable,
   baseSlug: string,
   fallback: string
 ): Promise<string> {

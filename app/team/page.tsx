@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import Team, { type TeamMemberView } from "@/app/components/sections/Team";
+import Team, {
+  type TeamMemberView,
+  type TeamCategoryView,
+} from "@/app/components/sections/Team";
 import { listTeam } from "@/app/lib/team-queries";
+import { listTeamCategories } from "@/app/lib/team-categories-queries";
 import { getSiteImages } from "@/app/lib/site-images";
 import { OG_IMAGE } from "@/app/lib/seo";
 
@@ -23,7 +27,11 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function TeamPage() {
-  const [rows, images] = await Promise.all([listTeam(), getSiteImages()]);
+  const [rows, categoryRows, images] = await Promise.all([
+    listTeam(),
+    listTeamCategories(),
+    getSiteImages(),
+  ]);
   const members: TeamMemberView[] = rows.map((r) => ({
     id: r.id,
     category: r.category,
@@ -35,10 +43,19 @@ export default async function TeamPage() {
     bio_jp: r.bio_jp,
     photo: r.photo,
   }));
+  const categories: TeamCategoryView[] = categoryRows.map((c) => ({
+    slug: c.slug,
+    name_en: c.name_en,
+    name_jp: c.name_jp,
+    description_en: c.description_en,
+    description_jp: c.description_jp,
+  }));
   const heroImages = [
     images.team_hero_1,
     images.team_hero_2,
     images.team_hero_3,
   ];
-  return <Team members={members} heroImages={heroImages} />;
+  return (
+    <Team members={members} categories={categories} heroImages={heroImages} />
+  );
 }

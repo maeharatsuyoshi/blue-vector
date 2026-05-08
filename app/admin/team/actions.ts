@@ -14,7 +14,7 @@ import { slugify, uniqueSlug } from "@/app/lib/slug";
 
 const TeamSchema = z.object({
   sort_order: z.coerce.number().int().default(0),
-  category: z.enum(["founder", "expert", "none"]).default("none"),
+  category: z.string().trim().min(1).default("none"),
   name_en: z.string().trim().min(1),
   name_jp: z.string().trim().min(1),
   role_en: z.string().trim().min(1),
