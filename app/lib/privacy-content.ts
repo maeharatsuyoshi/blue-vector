@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "./db";
+import { supabaseAdmin } from "./supabase-server";
 import { content } from "./content";
 
 export type PrivacyContent = {
@@ -24,26 +24,8 @@ export const PRIVACY_DEFAULTS: PrivacyContent = {
   cancel_jp: content.jp.contact.privacyCancel,
 };
 
-let initialized = false;
-async function ensureTable() {
-  if (initialized) return;
-  await sql`
-    CREATE TABLE IF NOT EXISTS privacy_policy (
-      id INTEGER PRIMARY KEY,
-      title_en TEXT NOT NULL DEFAULT '',
-      title_jp TEXT NOT NULL DEFAULT '',
-      body_en TEXT NOT NULL DEFAULT '',
-      body_jp TEXT NOT NULL DEFAULT '',
-      agree_en TEXT NOT NULL DEFAULT '',
-      agree_jp TEXT NOT NULL DEFAULT '',
-      cancel_en TEXT NOT NULL DEFAULT '',
-      cancel_jp TEXT NOT NULL DEFAULT '',
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      CONSTRAINT privacy_singleton CHECK (id = 1)
-    )
-  `;
-  initialized = true;
-}
+const COLUMNS =
+  "title_en, title_jp, body_en, body_jp, agree_en, agree_jp, cancel_en, cancel_jp";
 
 function pick(value: string | null | undefined, fallback: string): string {
   const v = (value ?? "").trim();
@@ -51,12 +33,13 @@ function pick(value: string | null | undefined, fallback: string): string {
 }
 
 export async function getPrivacyContent(): Promise<PrivacyContent> {
-  await ensureTable();
-  const rows = (await sql`
-    SELECT title_en, title_jp, body_en, body_jp, agree_en, agree_jp, cancel_en, cancel_jp
-    FROM privacy_policy WHERE id = 1
-  `) as Partial<PrivacyContent>[];
-  const r = rows[0];
+  const { data, error } = await supabaseAdmin
+    .from("privacy_policy")
+    .select(COLUMNS)
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) throw error;
+  const r = data as Partial<PrivacyContent> | null;
   if (!r) return { ...PRIVACY_DEFAULTS };
   return {
     title_en: pick(r.title_en, PRIVACY_DEFAULTS.title_en),
@@ -71,12 +54,13 @@ export async function getPrivacyContent(): Promise<PrivacyContent> {
 }
 
 export async function getRawPrivacyContent(): Promise<PrivacyContent> {
-  await ensureTable();
-  const rows = (await sql`
-    SELECT title_en, title_jp, body_en, body_jp, agree_en, agree_jp, cancel_en, cancel_jp
-    FROM privacy_policy WHERE id = 1
-  `) as Partial<PrivacyContent>[];
-  const r = rows[0];
+  const { data, error } = await supabaseAdmin
+    .from("privacy_policy")
+    .select(COLUMNS)
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) throw error;
+  const r = data as Partial<PrivacyContent> | null;
   if (!r) {
     return {
       title_en: "", title_jp: "",
@@ -98,23 +82,13 @@ export async function getRawPrivacyContent(): Promise<PrivacyContent> {
 }
 
 export async function setPrivacyContent(input: PrivacyContent): Promise<void> {
-  await ensureTable();
-  await sql`
-    INSERT INTO privacy_policy (
-      id, title_en, title_jp, body_en, body_jp, agree_en, agree_jp, cancel_en, cancel_jp, updated_at
-    ) VALUES (
-      1, ${input.title_en}, ${input.title_jp}, ${input.body_en}, ${input.body_jp},
-      ${input.agree_en}, ${input.agree_jp}, ${input.cancel_en}, ${input.cancel_jp}, now()
-    )
-    ON CONFLICT (id) DO UPDATE SET
-      title_en = EXCLUDED.title_en,
-      title_jp = EXCLUDED.title_jp,
-      body_en = EXCLUDED.body_en,
-      body_jp = EXCLUDED.body_jp,
-      agree_en = EXCLUDED.agree_en,
-      agree_jp = EXCLUDED.agree_jp,
-      cancel_en = EXCLUDED.cancel_en,
-      cancel_jp = EXCLUDED.cancel_jp,
-      updated_at = now()
-  `;
+  const { error } = await supabaseAdmin.from("privacy_policy").upsert(
+    {
+      id: 1,
+      ...input,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+  if (error) throw error;
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "./db";
+import { supabaseAdmin } from "./supabase-server";
 
 export type SiteImageSlot = {
   key: string;
@@ -75,29 +75,18 @@ const DEFAULTS = Object.fromEntries(
   SITE_IMAGE_SLOTS.map((s) => [s.key, s.defaultUrl])
 ) as Record<string, string>;
 
-let initialized = false;
-async function ensureTable() {
-  if (initialized) return;
-  await sql`
-    CREATE TABLE IF NOT EXISTS site_images (
-      slot TEXT PRIMARY KEY,
-      url TEXT NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-    )
-  `;
-  await sql`ALTER TABLE site_images ADD COLUMN IF NOT EXISTS bottom_fade TEXT NOT NULL DEFAULT ''`;
-  await sql`ALTER TABLE site_images ADD COLUMN IF NOT EXISTS top_fade TEXT NOT NULL DEFAULT ''`;
-  initialized = true;
-}
-
 export async function getSiteImages(): Promise<Record<string, SlotImage>> {
-  await ensureTable();
-  const rows = (await sql`SELECT slot, url, bottom_fade, top_fade FROM site_images`) as {
+  const { data, error } = await supabaseAdmin
+    .from("site_images")
+    .select("slot, url, bottom_fade, top_fade");
+  if (error) throw error;
+  const rows = (data ?? []) as {
     slot: string;
     url: string;
     bottom_fade: string;
     top_fade: string;
   }[];
+
   const map: Record<string, SlotImage> = {};
   for (const slot of SITE_IMAGE_SLOTS) {
     map[slot.key] = {
@@ -134,7 +123,6 @@ export async function setSiteImage(
   bottomFadeLevel: BottomFadeLevel | null,
   topFadeLevel: TopFadeLevel | null
 ): Promise<void> {
-  await ensureTable();
   const cleanUrl = (url ?? "").trim();
   const isDefaultBottom =
     bottomFadeLevel === null || bottomFadeLevel === DEFAULT_BOTTOM_FADE_LEVEL;
@@ -142,19 +130,27 @@ export async function setSiteImage(
     topFadeLevel === null || topFadeLevel === DEFAULT_TOP_FADE_LEVEL;
   const bottomStr = isDefaultBottom ? "" : String(bottomFadeLevel);
   const topStr = isDefaultTop ? "" : String(topFadeLevel);
+
   if (cleanUrl.length === 0 && bottomStr === "" && topStr === "") {
-    await sql`DELETE FROM site_images WHERE slot = ${slot}`;
+    const { error } = await supabaseAdmin
+      .from("site_images")
+      .delete()
+      .eq("slot", slot);
+    if (error) throw error;
     return;
   }
-  await sql`
-    INSERT INTO site_images (slot, url, bottom_fade, top_fade, updated_at)
-    VALUES (${slot}, ${cleanUrl}, ${bottomStr}, ${topStr}, now())
-    ON CONFLICT (slot) DO UPDATE SET
-      url = EXCLUDED.url,
-      bottom_fade = EXCLUDED.bottom_fade,
-      top_fade = EXCLUDED.top_fade,
-      updated_at = now()
-  `;
+
+  const { error } = await supabaseAdmin.from("site_images").upsert(
+    {
+      slot,
+      url: cleanUrl,
+      bottom_fade: bottomStr,
+      top_fade: topStr,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "slot" }
+  );
+  if (error) throw error;
 }
 
 export function getDefaults(): Record<string, string> {

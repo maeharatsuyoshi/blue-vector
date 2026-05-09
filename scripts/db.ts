@@ -1,11 +1,14 @@
-import { neon } from "@neondatabase/serverless";
+import { createClient } from "@supabase/supabase-js";
 import { loadEnvConfig } from "@next/env";
 
 loadEnvConfig(process.cwd());
 
-const connectionString = process.env.NEON_CONNECTION_STRING;
-if (!connectionString) {
-  throw new Error("NEON_CONNECTION_STRING is not set");
-}
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const sql = neon(connectionString);
+if (!url) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not set");
+if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
+
+export const supabase = createClient(url, serviceKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});

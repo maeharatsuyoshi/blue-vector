@@ -1,36 +1,12 @@
-import bcrypt from "bcryptjs";
-import { sql } from "./db";
+import { supabase } from "./db";
 import { content } from "../app/lib/content";
 
-async function seedAdmin() {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  const name = process.env.ADMIN_NAME ?? "Admin";
-
-  if (!email || !password) {
-    console.warn(
-      "Skipping admin seed: ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env"
-    );
-    return;
-  }
-
-  const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
-  if (existing.length > 0) {
-    console.log(`Admin ${email} already exists, skipping.`);
-    return;
-  }
-
-  const hash = await bcrypt.hash(password, 12);
-  await sql`
-    INSERT INTO users (email, password_hash, name, role)
-    VALUES (${email}, ${hash}, ${name}, 'admin')
-  `;
-  console.log(`Created admin user: ${email}`);
-}
-
 async function seedNews() {
-  const existing = await sql`SELECT COUNT(*)::int AS c FROM news`;
-  if (existing[0].c > 0) {
+  const { count, error: countError } = await supabase
+    .from("news")
+    .select("id", { count: "exact", head: true });
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) {
     console.log("News already seeded, skipping.");
     return;
   }
@@ -38,31 +14,34 @@ async function seedNews() {
   const en = content.en.news.items;
   const jp = content.jp.news.items;
 
-  for (let i = 0; i < en.length; i++) {
-    const e = en[i];
+  const rows = en.map((e, i) => {
     const j = jp.find((x) => x.id === e.id) ?? e;
-    await sql`
-      INSERT INTO news (
-        slug, date_published, sort_order,
-        category_en, category_jp,
-        title_en, title_jp,
-        excerpt_en, excerpt_jp,
-        body_en, body_jp
-      ) VALUES (
-        ${e.id}, ${e.date}, ${i},
-        ${e.category}, ${j.category},
-        ${e.title}, ${j.title},
-        ${e.excerpt}, ${j.excerpt},
-        ${e.body}, ${j.body}
-      )
-    `;
-  }
-  console.log(`Seeded ${en.length} news items.`);
+    return {
+      slug: e.id,
+      date_published: e.date,
+      sort_order: i,
+      category_en: e.category,
+      category_jp: j.category,
+      title_en: e.title,
+      title_jp: j.title,
+      excerpt_en: e.excerpt,
+      excerpt_jp: j.excerpt,
+      body_en: e.body,
+      body_jp: j.body,
+    };
+  });
+
+  const { error } = await supabase.from("news").insert(rows);
+  if (error) throw error;
+  console.log(`Seeded ${rows.length} news items.`);
 }
 
 async function seedTeam() {
-  const existing = await sql`SELECT COUNT(*)::int AS c FROM team_members`;
-  if (existing[0].c > 0) {
+  const { count, error: countError } = await supabase
+    .from("team_members")
+    .select("id", { count: "exact", head: true });
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) {
     console.log("Team already seeded, skipping.");
     return;
   }
@@ -70,30 +49,29 @@ async function seedTeam() {
   const en = content.en.team.members;
   const jp = content.jp.team.members;
 
-  for (let i = 0; i < en.length; i++) {
-    const e = en[i];
+  const rows = en.map((e, i) => {
     const j = jp.find((x) => x.id === e.id) ?? e;
-    await sql`
-      INSERT INTO team_members (
-        slug, sort_order,
-        name_en, name_jp,
-        role_en, role_jp,
-        bio_en, bio_jp,
-        initials, photo
-      ) VALUES (
-        ${e.id}, ${i},
-        ${e.name}, ${j.name},
-        ${e.role}, ${j.role},
-        ${e.bio}, ${j.bio},
-        ${e.initials}, ${e.photo}
-      )
-    `;
-  }
-  console.log(`Seeded ${en.length} team members.`);
+    return {
+      slug: e.id,
+      sort_order: i,
+      is_founder: e.id === "uemura" || e.id === "maehara",
+      name_en: e.name,
+      name_jp: j.name,
+      role_en: e.role,
+      role_jp: j.role,
+      bio_en: e.bio,
+      bio_jp: j.bio,
+      initials: e.initials,
+      photo: e.photo,
+    };
+  });
+
+  const { error } = await supabase.from("team_members").insert(rows);
+  if (error) throw error;
+  console.log(`Seeded ${rows.length} team members.`);
 }
 
 async function main() {
-  await seedAdmin();
   await seedNews();
   await seedTeam();
   console.log("Seed complete.");

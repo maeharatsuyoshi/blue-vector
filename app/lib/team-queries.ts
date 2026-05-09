@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "./db";
+import { supabaseAdmin } from "./supabase-server";
 
 export const NO_CATEGORY = "none" as const;
 
@@ -18,6 +18,9 @@ export type TeamRow = {
   initials: string;
   photo: string | null;
 };
+
+const COLUMNS =
+  "id, slug, sort_order, is_founder, category, name_en, name_jp, role_en, role_jp, bio_en, bio_jp, initials, photo";
 
 function normalize(rows: Record<string, unknown>[]): TeamRow[] {
   return rows.map((r) => {
@@ -46,77 +49,81 @@ function normalize(rows: Record<string, unknown>[]): TeamRow[] {
   });
 }
 
+function categoryRank(slug: string): number {
+  if (slug === "founder") return 0;
+  if (slug === "expert") return 1;
+  if (slug === NO_CATEGORY) return 9999;
+  return 2;
+}
+
 export async function listTeam(): Promise<TeamRow[]> {
-  const rows = await sql`
-    SELECT m.id, m.slug, m.sort_order, m.is_founder, m.category,
-           m.name_en, m.name_jp, m.role_en, m.role_jp,
-           m.bio_en, m.bio_jp, m.initials, m.photo
-    FROM team_members m
-    LEFT JOIN team_categories c ON c.slug = m.category
-    ORDER BY
-      CASE m.category WHEN 'founder' THEN 0 WHEN 'expert' THEN 1 WHEN 'none' THEN 9999 ELSE 2 END ASC,
-      c.created_at ASC NULLS LAST,
-      m.sort_order ASC,
-      m.id ASC
-  `;
-  return normalize(rows as Record<string, unknown>[]);
+  const [members, categories] = await Promise.all([
+    supabaseAdmin.from("team_members").select(COLUMNS),
+    supabaseAdmin.from("team_categories").select("slug, created_at"),
+  ]);
+  if (members.error) throw members.error;
+  if (categories.error) throw categories.error;
+
+  const catCreated = new Map<string, string>();
+  for (const c of (categories.data ?? []) as { slug: string; created_at: string }[]) {
+    catCreated.set(c.slug, c.created_at);
+  }
+
+  const rows = normalize((members.data ?? []) as Record<string, unknown>[]);
+  rows.sort((a, b) => {
+    const rankDiff = categoryRank(a.category) - categoryRank(b.category);
+    if (rankDiff !== 0) return rankDiff;
+    if (a.category === b.category) {
+      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+      return a.id - b.id;
+    }
+    const aCreated = catCreated.get(a.category) ?? "";
+    const bCreated = catCreated.get(b.category) ?? "";
+    if (aCreated !== bCreated) return aCreated < bCreated ? -1 : 1;
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+    return a.id - b.id;
+  });
+  return rows;
 }
 
 export async function getTeamMember(id: number): Promise<TeamRow | null> {
-  const rows = await sql`
-    SELECT id, slug, sort_order, is_founder, category, name_en, name_jp, role_en, role_jp,
-           bio_en, bio_jp, initials, photo
-    FROM team_members WHERE id = ${id}
-  `;
-  const list = normalize(rows as Record<string, unknown>[]);
-  return list[0] ?? null;
+  const { data, error } = await supabaseAdmin
+    .from("team_members")
+    .select(COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return normalize([data as Record<string, unknown>])[0] ?? null;
 }
 
 export type TeamInput = Omit<TeamRow, "id">;
 
 export async function createTeamMember(input: TeamInput): Promise<number> {
-  const rows = await sql`
-    INSERT INTO team_members (
-      slug, sort_order, is_founder, category,
-      name_en, name_jp,
-      role_en, role_jp,
-      bio_en, bio_jp,
-      initials, photo
-    ) VALUES (
-      ${input.slug}, ${input.sort_order}, ${input.is_founder}, ${input.category},
-      ${input.name_en}, ${input.name_jp},
-      ${input.role_en}, ${input.role_jp},
-      ${input.bio_en}, ${input.bio_jp},
-      ${input.initials}, ${input.photo}
-    )
-    RETURNING id
-  `;
-  return (rows[0] as { id: number }).id;
+  const { data, error } = await supabaseAdmin
+    .from("team_members")
+    .insert(input)
+    .select("id")
+    .single();
+  if (error) throw error;
+  return (data as { id: number }).id;
 }
 
 export async function updateTeamMember(
   id: number,
   input: TeamInput
 ): Promise<void> {
-  await sql`
-    UPDATE team_members SET
-      slug = ${input.slug},
-      sort_order = ${input.sort_order},
-      is_founder = ${input.is_founder},
-      category = ${input.category},
-      name_en = ${input.name_en},
-      name_jp = ${input.name_jp},
-      role_en = ${input.role_en},
-      role_jp = ${input.role_jp},
-      bio_en = ${input.bio_en},
-      bio_jp = ${input.bio_jp},
-      initials = ${input.initials},
-      photo = ${input.photo},
-      updated_at = now()
-    WHERE id = ${id}
-  `;
+  const { error } = await supabaseAdmin
+    .from("team_members")
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function deleteTeamMember(id: number): Promise<void> {
-  await sql`DELETE FROM team_members WHERE id = ${id}`;
+  const { error } = await supabaseAdmin
+    .from("team_members")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
 }

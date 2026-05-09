@@ -1,22 +1,42 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { decryptSession, SESSION_COOKIE_NAME } from "@/app/lib/session";
+import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(req: NextRequest) {
-  const path = req.nextUrl.pathname;
-  const isAdmin = path.startsWith("/admin");
-  if (!isAdmin) return NextResponse.next();
+  const res = NextResponse.next();
 
-  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = await decryptSession(token);
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
 
-  if (!session) {
-    const url = new URL("/login", req.nextUrl);
-    return NextResponse.redirect(url);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (req.nextUrl.pathname.startsWith("/admin")) {
+    const role =
+      (user?.app_metadata as Record<string, unknown> | undefined)?.role ??
+      (user?.user_metadata as Record<string, unknown> | undefined)?.role;
+    if (!user || role !== "admin") {
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
+    }
   }
 
-  return NextResponse.next();
+  return res;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif)$).*)",
+  ],
 };
