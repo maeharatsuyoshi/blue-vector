@@ -161,13 +161,13 @@ export default function News({
                   No news yet.
                 </div>
               ) : (
-                <div className="mt-16 md:mt-20 border-t border-[var(--rule)] pt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-0 md:gap-px bg-[var(--rule)]">
+                <div className="mt-16 md:mt-20 border-t border-[var(--rule)] pt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-transparent">
                   {items.map((item) => (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => setExpanded(item.id)}
-                      className="group text-left bg-[var(--surface)] p-5 md:p-6 flex flex-col h-full border border-[var(--rule)] md:border-0 mb-[-1px] md:mb-0 hover:bg-[var(--surface-hover)] transition-colors"
+                      className="group text-left bg-[var(--surface)] p-5 md:p-6 flex flex-col h-full border border-[var(--rule)] hover:bg-[var(--surface-hover)] transition-colors"
                     >
                       <div className="flex items-center justify-between mb-4">
                         <time className="text-[10px] tracking-[0.18em] uppercase text-[var(--ink-soft)] font-semibold">
