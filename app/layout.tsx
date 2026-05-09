@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Jost, Libre_Baskerville, Noto_Sans_JP } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import Shell from "@/app/components/Shell";
+import CloudflareAnalytics from "@/app/components/CloudflareAnalytics";
 import {
   SITE_URL,
   SITE_NAME,
@@ -136,8 +135,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[var(--surface)] text-[var(--ink)]">
         <Shell>{children}</Shell>
-        <Analytics />
-        <SpeedInsights />
+        <CloudflareAnalytics />
         <script
           type="application/ld+json"
           // JSON-LD must be raw JSON; React would otherwise escape quotes.

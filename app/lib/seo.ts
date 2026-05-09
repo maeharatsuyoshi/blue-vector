@@ -1,4 +1,5 @@
-export const SITE_URL = "https://blue-vector.vercel.app";
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://bluevector.co.jp";
 export const SITE_NAME = "BLUE VECTOR";
 export const SITE_LEGAL_NAME = "BLUE VECTOR Inc.";
 export const SITE_DESCRIPTION =
