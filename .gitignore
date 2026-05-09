@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# claude
+.claude/
+
 # internal briefing / reference imagery (not shipped with the site)
 /public/content/
 
