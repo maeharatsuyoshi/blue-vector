@@ -220,13 +220,7 @@ export default function Team({
                                 className="flex flex-col sm:flex-row gap-5 sm:gap-7"
                               >
                                 {m.photo && (
-                                  <div
-                                    className={
-                                      solo
-                                        ? "w-40 sm:w-52 lg:w-64 shrink-0"
-                                        : "w-32 sm:w-36 lg:w-40 shrink-0"
-                                    }
-                                  >
+                                  <div className="w-32 sm:w-36 lg:w-40 shrink-0">
                                     <Avatar name={name} photo={m.photo} />
                                   </div>
                                 )}
@@ -284,13 +278,7 @@ export default function Team({
                                 className="flex flex-col sm:flex-row gap-5 sm:gap-7"
                               >
                                 {m.photo && (
-                                  <div
-                                    className={
-                                      orphansSolo
-                                        ? "w-40 sm:w-52 lg:w-64 shrink-0"
-                                        : "w-32 sm:w-36 lg:w-40 shrink-0"
-                                    }
-                                  >
+                                  <div className="w-32 sm:w-36 lg:w-40 shrink-0">
                                     <Avatar name={name} photo={m.photo} />
                                   </div>
                                 )}
