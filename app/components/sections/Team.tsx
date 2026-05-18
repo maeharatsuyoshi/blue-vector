@@ -207,29 +207,50 @@ export default function Team({
                           </div>
                         )}
                         <div
-                          className={`mt-12 md:mt-14 border-t border-[var(--rule)] pt-8 md:pt-10 grid md:grid-cols-2 gap-8 md:gap-10`}
+                          className={`mt-12 md:mt-14 border-t border-[var(--rule)] pt-8 md:pt-10 grid gap-8 md:gap-10 ${
+                            group.length === 1 ? "grid-cols-1" : "md:grid-cols-2"
+                          }`}
                         >
                           {group.map((m) => {
                             const name = pick(m, "name", lang);
+                            const solo = group.length === 1;
                             return (
                               <article
                                 key={m.id}
                                 className="flex flex-col sm:flex-row gap-5 sm:gap-7"
                               >
                                 {m.photo && (
-                                  <div className="w-32 sm:w-36 lg:w-40 shrink-0">
+                                  <div
+                                    className={
+                                      solo
+                                        ? "w-40 sm:w-52 lg:w-64 shrink-0"
+                                        : "w-32 sm:w-36 lg:w-40 shrink-0"
+                                    }
+                                  >
                                     <Avatar name={name} photo={m.photo} />
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
+                                  <h4
+                                    className={
+                                      solo
+                                        ? "font-display text-[18px] md:text-[22px] font-bold text-[var(--ink)] leading-tight"
+                                        : "font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight"
+                                    }
+                                  >
                                     {name}
                                   </h4>
                                   <div className="mt-1.5 text-[9px] tracking-[0.22em] uppercase text-[var(--ink-soft)] font-semibold">
                                     {pick(m, "role", lang)}
                                   </div>
                                   <div className="mt-3 pt-3 border-t border-[var(--rule)]">
-                                    <p className="text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line">
+                                    <p
+                                      className={
+                                        solo
+                                          ? "text-[13px] md:text-[14px] leading-[1.8] text-[var(--ink-soft)] whitespace-pre-line"
+                                          : "text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line"
+                                      }
+                                    >
                                       {pick(m, "bio", lang)}
                                     </p>
                                   </div>
@@ -247,9 +268,14 @@ export default function Team({
                       (m) => !knownSlugs.has(m.category)
                     );
                     if (orphans.length === 0) return null;
+                    const orphansSolo = orphans.length === 1;
                     return (
                       <div>
-                        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                        <div
+                          className={`grid gap-8 md:gap-10 ${
+                            orphansSolo ? "grid-cols-1" : "md:grid-cols-2"
+                          }`}
+                        >
                           {orphans.map((m) => {
                             const name = pick(m, "name", lang);
                             return (
@@ -258,19 +284,37 @@ export default function Team({
                                 className="flex flex-col sm:flex-row gap-5 sm:gap-7"
                               >
                                 {m.photo && (
-                                  <div className="w-32 sm:w-36 lg:w-40 shrink-0">
+                                  <div
+                                    className={
+                                      orphansSolo
+                                        ? "w-40 sm:w-52 lg:w-64 shrink-0"
+                                        : "w-32 sm:w-36 lg:w-40 shrink-0"
+                                    }
+                                  >
                                     <Avatar name={name} photo={m.photo} />
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight">
+                                  <h4
+                                    className={
+                                      orphansSolo
+                                        ? "font-display text-[18px] md:text-[22px] font-bold text-[var(--ink)] leading-tight"
+                                        : "font-display text-[16px] md:text-[18px] font-bold text-[var(--ink)] leading-tight"
+                                    }
+                                  >
                                     {name}
                                   </h4>
                                   <div className="mt-1.5 text-[9px] tracking-[0.22em] uppercase text-[var(--ink-soft)] font-semibold">
                                     {pick(m, "role", lang)}
                                   </div>
                                   <div className="mt-3 pt-3 border-t border-[var(--rule)]">
-                                    <p className="text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line">
+                                    <p
+                                      className={
+                                        orphansSolo
+                                          ? "text-[13px] md:text-[14px] leading-[1.8] text-[var(--ink-soft)] whitespace-pre-line"
+                                          : "text-[12px] leading-[1.7] text-[var(--ink-soft)] whitespace-pre-line"
+                                      }
+                                    >
                                       {pick(m, "bio", lang)}
                                     </p>
                                   </div>

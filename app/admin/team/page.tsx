@@ -1,10 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { listTeam } from "@/app/lib/team-queries";
-import { deleteTeamAction } from "./actions";
+import { deleteTeamAction, moveTeamAction } from "./actions";
 
 export default async function TeamAdminPage() {
   const team = await listTeam();
+  const categoryIndex = new Map<string, { firstId: number; lastId: number }>();
+  for (const m of team) {
+    const existing = categoryIndex.get(m.category);
+    if (!existing) {
+      categoryIndex.set(m.category, { firstId: m.id, lastId: m.id });
+    } else {
+      existing.lastId = m.id;
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -38,7 +47,11 @@ export default async function TeamAdminPage() {
           </div>
         ) : (
           <ul>
-            {team.map((m) => (
+            {team.map((m) => {
+              const bounds = categoryIndex.get(m.category);
+              const isFirst = bounds?.firstId === m.id;
+              const isLast = bounds?.lastId === m.id;
+              return (
               <li
                 key={m.id}
                 className="border-b border-[var(--rule)] last:border-b-0 px-5 py-4 flex items-center gap-4 hover:bg-[var(--surface-hover)] transition-colors"
@@ -80,6 +93,40 @@ export default async function TeamAdminPage() {
                   <span className="text-[10px] tracking-[0.2em] uppercase text-[var(--ink-muted)]">
                     #{m.sort_order}
                   </span>
+                  <div className="flex items-center">
+                    <form
+                      action={async () => {
+                        "use server";
+                        await moveTeamAction(m.id, "up");
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        disabled={isFirst}
+                        title="Move up"
+                        aria-label="Move up"
+                        className="w-7 h-7 flex items-center justify-center text-[var(--ink-soft)] hover:text-[var(--ink)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        ↑
+                      </button>
+                    </form>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await moveTeamAction(m.id, "down");
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        disabled={isLast}
+                        title="Move down"
+                        aria-label="Move down"
+                        className="w-7 h-7 flex items-center justify-center text-[var(--ink-soft)] hover:text-[var(--ink)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        ↓
+                      </button>
+                    </form>
+                  </div>
                   <Link
                     href={`/admin/team/${m.id}`}
                     className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]"
@@ -101,7 +148,8 @@ export default async function TeamAdminPage() {
                   </form>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>

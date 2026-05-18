@@ -8,8 +8,10 @@ import {
   createTeamMember,
   deleteTeamMember,
   getTeamMember,
+  listTeam,
   updateTeamMember,
 } from "@/app/lib/team-queries";
+import { supabaseAdmin } from "@/app/lib/supabase-server";
 import { slugify, uniqueSlug } from "@/app/lib/slug";
 
 const TeamSchema = z.object({
@@ -101,6 +103,38 @@ export async function updateTeamAction(
 export async function deleteTeamAction(id: number) {
   await verifySession();
   await deleteTeamMember(id);
+  revalidatePath("/team");
+  revalidatePath("/admin/team");
+}
+
+export async function moveTeamAction(id: number, direction: "up" | "down") {
+  await verifySession();
+  const all = await listTeam();
+  const current = all.find((m) => m.id === id);
+  if (!current) return;
+  const siblings = all.filter((m) => m.category === current.category);
+  const idx = siblings.findIndex((m) => m.id === id);
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return;
+  const other = siblings[swapIdx];
+
+  const aOrder = current.sort_order;
+  const bOrder = other.sort_order;
+  if (aOrder === bOrder) {
+    await supabaseAdmin
+      .from("team_members")
+      .update({ sort_order: direction === "up" ? bOrder - 1 : bOrder + 1 })
+      .eq("id", current.id);
+  } else {
+    await supabaseAdmin
+      .from("team_members")
+      .update({ sort_order: bOrder })
+      .eq("id", current.id);
+    await supabaseAdmin
+      .from("team_members")
+      .update({ sort_order: aOrder })
+      .eq("id", other.id);
+  }
   revalidatePath("/team");
   revalidatePath("/admin/team");
 }
