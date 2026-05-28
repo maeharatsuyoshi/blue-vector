@@ -49,37 +49,45 @@ function normalize(rows: Record<string, unknown>[]): TeamRow[] {
   });
 }
 
-function categoryRank(slug: string): number {
-  if (slug === "founder") return 0;
-  if (slug === "expert") return 1;
-  if (slug === NO_CATEGORY) return 9999;
-  return 2;
-}
+type CategoryOrder = { sort_order: number; created_at: string };
 
 export async function listTeam(): Promise<TeamRow[]> {
   const [members, categories] = await Promise.all([
     supabaseAdmin.from("team_members").select(COLUMNS),
-    supabaseAdmin.from("team_categories").select("slug, created_at"),
+    supabaseAdmin
+      .from("team_categories")
+      .select("slug, sort_order, created_at"),
   ]);
   if (members.error) throw members.error;
   if (categories.error) throw categories.error;
 
-  const catCreated = new Map<string, string>();
-  for (const c of (categories.data ?? []) as { slug: string; created_at: string }[]) {
-    catCreated.set(c.slug, c.created_at);
+  const catOrder = new Map<string, CategoryOrder>();
+  for (const c of (categories.data ?? []) as {
+    slug: string;
+    sort_order: number;
+    created_at: string;
+  }[]) {
+    catOrder.set(c.slug, {
+      sort_order: c.sort_order ?? 0,
+      created_at: c.created_at,
+    });
+  }
+
+  // Members whose category isn't a known team_categories row (e.g. "none")
+  // fall to the bottom, preserving previous behaviour.
+  function categorySortKey(category: string): number {
+    return catOrder.get(category)?.sort_order ?? Number.MAX_SAFE_INTEGER;
   }
 
   const rows = normalize((members.data ?? []) as Record<string, unknown>[]);
   rows.sort((a, b) => {
-    const rankDiff = categoryRank(a.category) - categoryRank(b.category);
-    if (rankDiff !== 0) return rankDiff;
-    if (a.category === b.category) {
-      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
-      return a.id - b.id;
+    const catDiff = categorySortKey(a.category) - categorySortKey(b.category);
+    if (catDiff !== 0) return catDiff;
+    if (a.category !== b.category) {
+      const aCreated = catOrder.get(a.category)?.created_at ?? "";
+      const bCreated = catOrder.get(b.category)?.created_at ?? "";
+      if (aCreated !== bCreated) return aCreated < bCreated ? -1 : 1;
     }
-    const aCreated = catCreated.get(a.category) ?? "";
-    const bCreated = catCreated.get(b.category) ?? "";
-    if (aCreated !== bCreated) return aCreated < bCreated ? -1 : 1;
     if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
     return a.id - b.id;
   });

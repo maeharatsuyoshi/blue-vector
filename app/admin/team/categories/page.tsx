@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listTeamCategoriesWithCounts } from "@/app/lib/team-categories-queries";
 import DeleteCategoryButton from "./DeleteCategoryButton";
+import MoveCategoryButtons from "./MoveCategoryButtons";
 
 export default async function TeamCategoriesPage() {
   const categories = await listTeamCategoriesWithCounts();
@@ -40,11 +41,16 @@ export default async function TeamCategoriesPage() {
           </div>
         ) : (
           <ul>
-            {categories.map((c) => (
+            {categories.map((c, i) => (
               <li
                 key={c.id}
                 className="border-b border-[var(--rule)] last:border-b-0 px-5 py-4 flex items-start gap-4 hover:bg-[var(--surface-hover)] transition-colors"
               >
+                <MoveCategoryButtons
+                  id={c.id}
+                  canMoveUp={i > 0}
+                  canMoveDown={i < categories.length - 1}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-display text-sm font-bold">

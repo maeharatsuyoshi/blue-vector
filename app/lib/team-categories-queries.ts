@@ -8,6 +8,7 @@ export type TeamCategoryRow = {
   name_jp: string;
   description_en: string;
   description_jp: string;
+  sort_order: number;
   created_at: string;
 };
 
@@ -16,7 +17,7 @@ export type TeamCategoryWithCount = TeamCategoryRow & {
 };
 
 const COLUMNS =
-  "id, slug, name_en, name_jp, description_en, description_jp, created_at";
+  "id, slug, name_en, name_jp, description_en, description_jp, sort_order, created_at";
 
 function normalize(rows: Record<string, unknown>[]): TeamCategoryRow[] {
   return rows.map((r) => ({
@@ -26,20 +27,14 @@ function normalize(rows: Record<string, unknown>[]): TeamCategoryRow[] {
     name_jp: r.name_jp as string,
     description_en: (r.description_en as string) ?? "",
     description_jp: (r.description_jp as string) ?? "",
+    sort_order: (r.sort_order as number) ?? 0,
     created_at: String(r.created_at),
   }));
 }
 
-function rank(slug: string): number {
-  if (slug === "founder") return 0;
-  if (slug === "expert") return 1;
-  return 2;
-}
-
 function sortCategories<T extends TeamCategoryRow>(rows: T[]): T[] {
   return [...rows].sort((a, b) => {
-    const r = rank(a.slug) - rank(b.slug);
-    if (r !== 0) return r;
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
     if (a.created_at !== b.created_at)
       return a.created_at < b.created_at ? -1 : 1;
     return a.id - b.id;
@@ -96,16 +91,54 @@ export async function categoryMemberCount(slug: string): Promise<number> {
   return count ?? 0;
 }
 
-export type TeamCategoryInput = Omit<TeamCategoryRow, "id" | "created_at">;
+export type TeamCategoryInput = Omit<
+  TeamCategoryRow,
+  "id" | "sort_order" | "created_at"
+>;
 
 export async function createTeamCategory(input: TeamCategoryInput): Promise<number> {
+  const { data: maxRow, error: maxError } = await supabaseAdmin
+    .from("team_categories")
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (maxError) throw maxError;
+  const nextSortOrder = ((maxRow as { sort_order: number } | null)?.sort_order ?? -1) + 1;
+
   const { data, error } = await supabaseAdmin
     .from("team_categories")
-    .insert(input)
+    .insert({ ...input, sort_order: nextSortOrder })
     .select("id")
     .single();
   if (error) throw error;
   return (data as { id: number }).id;
+}
+
+export async function swapCategorySortOrder(
+  idA: number,
+  idB: number
+): Promise<void> {
+  const { data, error } = await supabaseAdmin
+    .from("team_categories")
+    .select("id, sort_order")
+    .in("id", [idA, idB]);
+  if (error) throw error;
+  const rows = (data ?? []) as { id: number; sort_order: number }[];
+  const a = rows.find((r) => r.id === idA);
+  const b = rows.find((r) => r.id === idB);
+  if (!a || !b) throw new Error("Category not found for swap.");
+
+  const updA = await supabaseAdmin
+    .from("team_categories")
+    .update({ sort_order: b.sort_order, updated_at: new Date().toISOString() })
+    .eq("id", idA);
+  if (updA.error) throw updA.error;
+  const updB = await supabaseAdmin
+    .from("team_categories")
+    .update({ sort_order: a.sort_order, updated_at: new Date().toISOString() })
+    .eq("id", idB);
+  if (updB.error) throw updB.error;
 }
 
 export async function updateTeamCategory(

@@ -11,6 +11,8 @@ import {
   deleteTeamCategoryEmpty,
   deleteTeamCategoryReassign,
   getTeamCategory,
+  listTeamCategories,
+  swapCategorySortOrder,
   updateTeamCategory,
 } from "@/app/lib/team-categories-queries";
 import { slugify, uniqueSlug } from "@/app/lib/slug";
@@ -129,6 +131,25 @@ export async function deleteCategoryAction(
     await deleteTeamCategoryReassign(existing.slug, reassignToSlug);
   }
 
+  revalidateAll();
+  return { ok: true };
+}
+
+export type MoveCategoryResult = { ok: true } | { ok: false; error: string };
+
+export async function moveCategoryAction(
+  id: number,
+  direction: "up" | "down"
+): Promise<MoveCategoryResult> {
+  await verifySession();
+  const ordered = await listTeamCategories();
+  const idx = ordered.findIndex((c) => c.id === id);
+  if (idx === -1) return { ok: false, error: "Category not found." };
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= ordered.length) {
+    return { ok: false, error: "Already at boundary." };
+  }
+  await swapCategorySortOrder(ordered[idx].id, ordered[swapIdx].id);
   revalidateAll();
   return { ok: true };
 }
